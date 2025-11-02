@@ -1,17 +1,17 @@
 
-import streamlit as st  
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 import io
 
-
+# --- Configuração da Página ---
 st.set_page_config(
     page_title="Rastreador de Finanças",
     page_icon="💰",
     layout="wide"
 )
 
-
+# --- Função de Categorização ---
 MAPA_CATEGORIAS = {
     'Alimentação': ['ifood', 'restaurante', 'mercado', 'supermercado', 'pao de acucar', 'padaria'],
     'Transporte': ['uber', '99', 'taxi', 'onibus', 'metro', 'gasolina', 'posto', 'estacionamento'],
@@ -30,11 +30,11 @@ def categorizar_transacao(descricao):
                 return categoria
     return 'Outros'
 
-
-st.title("Mapeador de Finanças Pessoais")
+# --- Título e Descrição ---
+st.title("💰 Rastreador de Finanças Pessoais")
 st.markdown("""
-Tenha uma visão clara de suas finanças.
-**Carregue seu extrato bancário em formato CSV** e a análise será gerada automaticamente.
+Use esta ferramenta para ter uma visão clara de suas finanças.
+**Basta carregar seu extrato bancário em formato CSV** e a análise será gerada automaticamente.
 """)
 
 st.markdown("""
@@ -44,6 +44,7 @@ st.markdown("""
 3.  **Despesas devem ter valores negativos** (ex: -50.25) e **Receitas devem ter valores positivos** (ex: 1200.00).
 """)
 
+# --- Upload do Arquivo ---
 uploaded_file = st.file_uploader("Carregue seu extrato (CSV)", type="csv")
 
 if uploaded_file is not None:
@@ -133,6 +134,7 @@ if uploaded_file is not None:
 
 else:
     st.info("Aguardando o upload do seu extrato CSV... 📄")
+
 
 
 
