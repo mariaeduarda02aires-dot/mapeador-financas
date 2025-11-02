@@ -1,5 +1,5 @@
 
-import streamlit as st  <--- AGORA ESTA É A PRIMEIRA LINHA
+import streamlit as st  
 import pandas as pd
 import plotly.express as px
 import io
@@ -133,5 +133,6 @@ if uploaded_file is not None:
 
 else:
     st.info("Aguardando o upload do seu extrato CSV... 📄")
+
 
 
