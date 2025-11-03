@@ -2,12 +2,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go  # <-- NOVA LINHA (IMPORTANTE)
+import plotly.graph_objects as go
 import io
 
 # --- Configuração da Página ---
 st.set_page_config(
-    page_title="Rastreador de Finanças",
+    page_title="Mapeador de Finanças",
     page_icon="💰",
     layout="wide"
 )
@@ -94,29 +94,34 @@ if uploaded_file is not None:
             df_gastos_categoria['Valor_Abs'] = df_gastos_categoria['Valor'].abs()
             df_agrupado = df_gastos_categoria.groupby('Categoria')['Valor_Abs'].sum().reset_index()
 
+            # ==========================================================
+            # --- NOVA LINHA PARA DEIXAR MAIS DIDÁTICO ---
+            # Ordena as categorias da maior para a menor despesa
+            df_agrupado = df_agrupado.sort_values(by='Valor_Abs', ascending=False)
+            # ==========================================================
+
             col_graf1, col_graf2 = st.columns(2)
             
             with col_graf1:
                 st.subheader("Distribuição de Despesas")
+                # O gráfico de pizza agora também será ordenado do maior para o menor
                 fig_pie = px.pie(
                     df_agrupado,
                     names='Categoria',
                     values='Valor_Abs',
-                    title='Gastos por Categoria',
+                    title='Gastos por Categoria (Do maior para o menor)',
                     hole=0.3, # Transforma em "Donut"
                     color_discrete_sequence=px.colors.sequential.RdBu
                 )
                 fig_pie.update_traces(textposition='inside', textinfo='percent+label')
                 st.plotly_chart(fig_pie, use_container_width=True)
 
-            # ==========================================================
-            # --- SEÇÃO DO GRÁFICO ALTERADA (Gráfico de Cascata) ---
-            # ==========================================================
+            # --- SEÇÃO DO GRÁFICO DE CASCATA ---
             with col_graf2:
                 st.subheader("Fluxo de Caixa (Cascata)")
 
                 # Prepara os dados para o gráfico de cascata
-                # 1. Pegamos as categorias e seus valores (como negativos)
+                # 1. Pegamos as categorias (agora ordenadas) e seus valores (como negativos)
                 df_despesas_waterfall = df_agrupado.copy()
                 df_despesas_waterfall['Valor'] = -df_despesas_waterfall['Valor_Abs'] # Converte para negativo
 
@@ -135,7 +140,7 @@ if uploaded_file is not None:
                     x=x_labels,
                     y=y_values,
                     text=[f"R$ {v:,.2f}" for v in y_values],
-                    textposition="outside",
+                    textposition="auto", # Mudei de 'outside' para 'auto' para evitar sobreposição
                     connector={"line": {"color": "rgb(63, 63, 63)"}}, # Linha pontilhada
                     increasing={"marker": {"color": "#1f77b4"}}, # Cor para positivos (nenhum, mas definido)
                     decreasing={"marker": {"color": "#d62728"}}, # Cor para negativos (Despesas)
@@ -143,14 +148,11 @@ if uploaded_file is not None:
                 ))
 
                 fig_waterfall.update_layout(
-                    title="Fluxo: Receita ➔ Despesas ➔ Saldo",
+                    title="Fluxo: Receita ➔ Despesas (Maiores Primeiro) ➔ Saldo",
                     showlegend=False
                 )
                 
                 st.plotly_chart(fig_waterfall, use_container_width=True)
-            # ==========================================================
-            # --- FIM DA SEÇÃO ALTERADA ---
-            # ==========================================================
 
             # --- 4. GRÁFICO (Gastos ao Longo do Tempo) ---
             st.subheader("Gastos ao Longo do Tempo",)
