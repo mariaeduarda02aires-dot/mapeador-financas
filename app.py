@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go  # <-- NOVA LINHA (IMPORTANTE)
 import io
 
 # --- Configuração da Página ---
@@ -85,9 +86,10 @@ if uploaded_file is not None:
             
             col3.metric("Saldo", f"R$ {saldo:,.2f}", delta=saldo_delta, delta_color=("off" if saldo == 0 else "normal"))
 
-            # --- 3. Gráficos Principais (Pizza e Barras) ---
+            # --- 3. Gráficos Principais (Pizza e Cascata) ---
             st.header("Análise Detalhada", divider='rainbow')
 
+            # Prepara dados para ambos os gráficos
             df_gastos_categoria = df_despesas[df_despesas['Categoria'] != 'Receitas'].copy()
             df_gastos_categoria['Valor_Abs'] = df_gastos_categoria['Valor'].abs()
             df_agrupado = df_gastos_categoria.groupby('Categoria')['Valor_Abs'].sum().reset_index()
@@ -108,31 +110,44 @@ if uploaded_file is not None:
                 st.plotly_chart(fig_pie, use_container_width=True)
 
             # ==========================================================
-            # --- SEÇÃO DO GRÁFICO ALTERADA (CONFORME SOLICITADO) ---
+            # --- SEÇÃO DO GRÁFICO ALTERADA (Gráfico de Cascata) ---
             # ==========================================================
             with col_graf2:
-                st.subheader("Despesa vs. Saldo")
+                st.subheader("Fluxo de Caixa (Cascata)")
+
+                # Prepara os dados para o gráfico de cascata
+                # 1. Pegamos as categorias e seus valores (como negativos)
+                df_despesas_waterfall = df_agrupado.copy()
+                df_despesas_waterfall['Valor'] = -df_despesas_waterfall['Valor_Abs'] # Converte para negativo
+
+                # 2. Criamos as listas para o gráfico
+                x_labels = ["Receita Total"] + df_despesas_waterfall['Categoria'].tolist() + ["Saldo Final"]
+                y_values = [total_receitas] + df_despesas_waterfall['Valor'].tolist() + [saldo]
                 
-                # Criamos um DataFrame com apenas as duas métricas
-                df_resumo_bar = pd.DataFrame({
-                    'Métrica': ['Despesa Total', 'Saldo Final'],
-                    'Valor': [total_despesas, saldo] # Usamos os valores reais (despesa é negativa)
-                })
+                # 3. Define a "medida" de cada barra
+                measures = ["absolute"] + ["relative"] * len(df_despesas_waterfall) + ["total"]
                 
-                fig_bar = px.bar(
-                    df_resumo_bar,
-                    x='Métrica',
-                    y='Valor',
-                    title='Comparativo Despesa Total vs. Saldo Final',
-                    color='Métrica', # Cores diferentes para cada barra
-                    color_discrete_map={
-                        'Despesa Total': 'red',
-                        'Saldo Final': 'blue'
-                        },
-                    text='Valor' # Mostra o valor na barra
+                # 4. Cria o gráfico de cascata com plotly.graph_objects (go)
+                fig_waterfall = go.Figure(go.Waterfall(
+                    name="Fluxo de Caixa",
+                    orientation="v",
+                    measure=measures,
+                    x=x_labels,
+                    y=y_values,
+                    text=[f"R$ {v:,.2f}" for v in y_values],
+                    textposition="outside",
+                    connector={"line": {"color": "rgb(63, 63, 63)"}}, # Linha pontilhada
+                    increasing={"marker": {"color": "#1f77b4"}}, # Cor para positivos (nenhum, mas definido)
+                    decreasing={"marker": {"color": "#d62728"}}, # Cor para negativos (Despesas)
+                    totals={"marker": {"color": "#2ca02c"}}      # Cor para Totais (Receita e Saldo)
+                ))
+
+                fig_waterfall.update_layout(
+                    title="Fluxo: Receita ➔ Despesas ➔ Saldo",
+                    showlegend=False
                 )
-                fig_bar.update_traces(texttemplate='R$ %{text:,.2f}', textposition='outside')
-                st.plotly_chart(fig_bar, use_container_width=True)
+                
+                st.plotly_chart(fig_waterfall, use_container_width=True)
             # ==========================================================
             # --- FIM DA SEÇÃO ALTERADA ---
             # ==========================================================
@@ -158,7 +173,7 @@ if uploaded_file is not None:
             st.plotly_chart(fig_line, use_container_width=True)
 
 
-            # --- 5. Tabela de Dados (Antigo passo 4) ---
+            # --- 5. Tabela de Dados ---
             st.header("Transações Detalhadas", divider='rainbow')
             st.markdown("Veja seu extrato categorizado. Você pode ordenar clicando no cabeçalho das colunas.")
             
@@ -174,7 +189,6 @@ if uploaded_file is not None:
 
 else:
     st.info("Aguardando o upload do seu extrato CSV... 📄")
-
 
 
 
