@@ -23,12 +23,13 @@ MAPA_CATEGORIAS = {
 }
 
 def categorizar_transacao(descricao):
+    """Verifica a descrição e retorna uma categoria com base no MAPA_CATEGORIAS."""
     descricao_lower = descricao.lower()
     for categoria, palavras_chave in MAPA_CATEGORIAS.items():
         for palavra in palavras_chave:
             if palavra in descricao_lower:
                 return categoria
-    return 'Outros'
+    return 'Outros' # Categoria padrão se nenhuma palavra-chave for encontrada
 
 # --- Título e Descrição ---
 st.title("💰 Rastreador de Finanças Pessoais")
@@ -54,16 +55,20 @@ if uploaded_file is not None:
         if not all(col in df.columns for col in ['Data', 'Descricao_Transacao', 'Valor']):
             st.error(f"Erro: O arquivo CSV deve conter as colunas 'Data', 'Descricao_Transacao' e 'Valor'. Colunas encontradas: {list(df.columns)}")
         else:
+            # --- 1. Processamento e Limpeza dos Dados ---
             df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
             df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
             df.dropna(subset=['Valor', 'Data', 'Descricao_Transacao'], inplace=True)
+
+            # Aplica a função de categorização para criar uma nova coluna
             df['Categoria'] = df['Descricao_Transacao'].apply(categorizar_transacao)
 
+            # --- 2. Cálculo dos KPIs (Métricas) ---
             df_receitas = df[df['Valor'] > 0]
             df_despesas = df[df['Valor'] < 0]
             
             total_receitas = df_receitas['Valor'].sum()
-            total_despesas = df_despesas['Valor'].sum()
+            total_despesas = df_despesas['Valor'].sum() # Este valor é negativo
             saldo = total_receitas + total_despesas
 
             st.header("Resumo Financeiro", divider='rainbow')
@@ -80,6 +85,7 @@ if uploaded_file is not None:
             
             col3.metric("Saldo", f"R$ {saldo:,.2f}", delta=saldo_delta, delta_color=("off" if saldo == 0 else "normal"))
 
+            # --- 3. Gráficos Principais (Pizza e Barras) ---
             st.header("Análise Detalhada", divider='rainbow')
 
             df_gastos_categoria = df_despesas[df_despesas['Categoria'] != 'Receitas'].copy()
@@ -95,36 +101,70 @@ if uploaded_file is not None:
                     names='Categoria',
                     values='Valor_Abs',
                     title='Gastos por Categoria',
-                    hole=0.3,
+                    hole=0.3, # Transforma em "Donut"
                     color_discrete_sequence=px.colors.sequential.RdBu
                 )
                 fig_pie.update_traces(textposition='inside', textinfo='percent+label')
                 st.plotly_chart(fig_pie, use_container_width=True)
 
+            # ==========================================================
+            # --- SEÇÃO DO GRÁFICO ALTERADA (CONFORME SOLICITADO) ---
+            # ==========================================================
             with col_graf2:
-                st.subheader("Receita vs. Despesa")
+                st.subheader("Despesa vs. Saldo")
+                
+                # Criamos um DataFrame com apenas as duas métricas
                 df_resumo_bar = pd.DataFrame({
-                    'Tipo': ['Receita', 'Despesa'],
-                    'Valor': [total_receitas, abs(total_despesas)]
+                    'Métrica': ['Despesa Total', 'Saldo Final'],
+                    'Valor': [total_despesas, saldo] # Usamos os valores reais (despesa é negativa)
                 })
+                
                 fig_bar = px.bar(
                     df_resumo_bar,
-                    x='Tipo',
+                    x='Métrica',
                     y='Valor',
-                    title='Comparativo Receita vs. Despesa',
-                    color='Tipo',
-                    color_discrete_map={'Receita': 'green', 'Despesa': 'red'},
-                    text='Valor'
+                    title='Comparativo Despesa Total vs. Saldo Final',
+                    color='Métrica', # Cores diferentes para cada barra
+                    color_discrete_map={
+                        'Despesa Total': 'red',
+                        'Saldo Final': 'blue'
+                        },
+                    text='Valor' # Mostra o valor na barra
                 )
                 fig_bar.update_traces(texttemplate='R$ %{text:,.2f}', textposition='outside')
                 st.plotly_chart(fig_bar, use_container_width=True)
+            # ==========================================================
+            # --- FIM DA SEÇÃO ALTERADA ---
+            # ==========================================================
 
+            # --- 4. GRÁFICO (Gastos ao Longo do Tempo) ---
+            st.subheader("Gastos ao Longo do Tempo",)
+            
+            # Prepara os dados: agrupa gastos por dia
+            df_despesas_dia = df_despesas.copy()
+            df_despesas_dia['Valor_Abs'] = df_despesas_dia['Valor'].abs()
+            # Agrupa pela data e soma os valores absolutos
+            df_gastos_por_dia = df_despesas_dia.groupby('Data')['Valor_Abs'].sum().reset_index()
+
+            fig_line = px.line(
+                df_gastos_por_dia,
+                x='Data',
+                y='Valor_Abs',
+                title='Evolução dos Gastos Diários',
+                markers=True, # Adiciona marcadores para cada dia
+                labels={'Valor_Abs': 'Valor Gasto (R$)', 'Data': 'Dia'} # Renomeia os eixos
+            )
+            fig_line.update_traces(textposition="bottom right")
+            st.plotly_chart(fig_line, use_container_width=True)
+
+
+            # --- 5. Tabela de Dados (Antigo passo 4) ---
             st.header("Transações Detalhadas", divider='rainbow')
-            st.markdown("Veja seu extrato categorizado.")
+            st.markdown("Veja seu extrato categorizado. Você pode ordenar clicando no cabeçalho das colunas.")
             
             df_display = df[['Data', 'Descricao_Transacao', 'Categoria', 'Valor']].copy()
             df_display['Valor'] = df_display['Valor'].map("R$ {:,.2f}".format)
-            df_display['Data'] = df_display['Data'].dt.strftime('%d/%m/%Y')
+            df_display['Data'] = df_display['Data'].dt.strftime('%d/%m/%Y') # Formata data
             
             st.dataframe(df_display, use_container_width=True, hide_index=True)
 
