@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-# import plotly.graph_objects as go  <- Não precisamos mais desta
 import io
 
 # --- Configuração da Página ---
@@ -118,54 +117,43 @@ else:
                 st.plotly_chart(fig_pie, use_container_width=True)
 
             # ==========================================================
-            # --- SEÇÃO DO GRÁFICO ALTERADA (Barras Empilhadas) ---
+            # --- SEÇÃO DO GRÁFIGO ALTERADA (Barras Agrupadas) ---
             # ==========================================================
             with col_graf2:
-                st.subheader("Visão Geral: Faturamento vs. Custos vs. Lucro")
+                st.subheader("Visão Geral (Barras Lado a Lado)")
                 
-                # Prepara os dados para o gráfico de barras empilhadas
-                
-                # 1. Cria um dataframe com os custos (já ordenado)
-                df_custos_stack = df_agrupado.copy()
-                df_custos_stack['Métrica'] = 'Custos' # Coluna para agrupar
+                # 1. Renomeia o dataframe de custos (já ordenado)
+                df_custos_barras = df_agrupado.rename(columns={'Categoria': 'Métrica', 'Valor_Abs': 'Valor'})
                 
                 # 2. Cria os dataframes para Faturamento e Lucro
                 df_faturamento = pd.DataFrame({
-                    'Categoria': ['Faturamento'],
-                    'Valor_Abs': [faturamento_bruto],
-                    'Métrica': ['Faturamento']
+                    'Métrica': ['Faturamento Bruto'],
+                    'Valor': [faturamento_bruto]
                 })
                 
                 df_lucro = pd.DataFrame({
-                    'Categoria': ['Lucro Líquido'],
-                    'Valor_Abs': [lucro_liquido if lucro_liquido > 0 else 0], # Não mostra lucro negativo
-                    'Métrica': ['Lucro']
+                    'Métrica': ['Lucro Líquido'],
+                    'Valor': [lucro_liquido if lucro_liquido > 0 else 0] # Não mostra lucro negativo
                 })
 
                 # 3. Junta tudo em um dataframe só
-                df_grafico_final = pd.concat([df_faturamento, df_lucro, df_custos_stack])
-
+                df_grafico_final = pd.concat([df_faturamento, df_custos_barras, df_lucro])
+                
                 # 4. Cria o gráfico
-                fig_bar_stack = px.bar(
+                fig_bar_grouped = px.bar(
                     df_grafico_final,
-                    x='Métrica', # As 3 barras principais (Faturamento, Custos, Lucro)
-                    y='Valor_Abs', # A altura
-                    color='Categoria', # O que define a cor (ou o empilhamento)
-                    title='Faturamento vs. Custos Empilhados vs. Lucro',
-                    labels={'Valor_Abs': 'Valor (R$)', 'Métrica': 'Componente Financeiro'}
+                    x='Métrica', # Cada Métrica (Faturamento, Aluguel, Imposto, Lucro) vira uma barra
+                    y='Valor',
+                    color='Métrica', # Cada barra tem sua própria cor
+                    title='Componentes Financeiros (Do Maior para o Menor)',
+                    labels={'Valor': 'Valor (R$)', 'Métrica': 'Componente Financeiro'}
                 )
                 
-                fig_bar_stack.update_layout(
-                    xaxis_categoryorder='array', # Ordena as barras
-                    xaxis_categoryarray=['Faturamento', 'Custos', 'Lucro']
-                )
+               
+                fig_bar_grouped.update_layout(xaxis_categoryorder='total descending')
 
-                st.plotly_chart(fig_bar_stack, use_container_width=True)
-            # ==========================================================
-            # --- FIM DA SEÇÃO ALTERADA ---
-            # ==========================================================
-
-            # --- Gráfico de Linha (Evolução) ---
+                st.plotly_chart(fig_bar_grouped, use_container_width=True)
+ 
             st.subheader("Evolução do Faturamento vs. Custos ao Longo do Tempo")
             df_receitas_dia = df_receitas.groupby(pd.Grouper(key='Data', freq='D'))['Valor'].sum().reset_index().rename(columns={'Valor': 'Faturamento'})
             df_despesas_dia = df_despesas.groupby(pd.Grouper(key='Data', freq='D'))['Valor'].sum().abs().reset_index().rename(columns={'Valor': 'Custos'})
@@ -180,7 +168,7 @@ else:
             )
             st.plotly_chart(fig_line, use_container_width=True)
 
-        # --- Aba da Tabela ---
+        
         with tab_tabela:
             st.header("Todas as Transações Categorizadas", divider='gray')
             st.markdown("Verifique, filtre ou ordene suas transações.")
@@ -198,12 +186,10 @@ else:
             
             st.dataframe(df_display, use_container_width=True, hide_index=True)
 
-    # Captura de erro
+    
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
         st.error("Verifique se o seu CSV está no formato correto (separado por vírgulas) e tente novamente.")
 
-
-
-
-
+else:
+    st.info("Aguardando o upload do seu extrato CSV... 📄")
