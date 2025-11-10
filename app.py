@@ -110,14 +110,14 @@ else:
                     df_agrupado,
                     names='Categoria',
                     values='Valor_Abs',
-                    title='Custos por Categoria (Do maior para o menor)',
+                    title='Custos por Categoria',
                     hole=0.3
                 )
                 fig_pie.update_traces(textposition='inside', textinfo='percent+label')
                 st.plotly_chart(fig_pie, use_container_width=True)
 
             with col_graf2:
-                st.subheader("Visão Geral (Barras Lado a Lado)")
+                st.subheader("Visão Geral")
                 
                 
                 df_custos_barras = df_agrupado.rename(columns={'Categoria': 'Métrica', 'Valor_Abs': 'Valor'})
@@ -142,7 +142,7 @@ else:
                     x='Métrica', # Cada Métrica (Faturamento, Aluguel, Imposto, Lucro) vira uma barra
                     y='Valor',
                     color='Métrica', # Cada barra tem sua própria cor
-                    title='Componentes Financeiros (Do Maior para o Menor)',
+                    title='Componentes Financeiros',
                     labels={'Valor': 'Valor (R$)', 'Métrica': 'Componente Financeiro'}
                 )
                 
@@ -188,4 +188,5 @@ else:
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
         st.error("Verifique se o seu CSV está no formato correto (separado por vírgulas) e tente novamente.")
+
 
