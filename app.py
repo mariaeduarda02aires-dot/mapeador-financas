@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import io
 
-# --- Configuração da Página ---
+
 st.set_page_config(
     page_title="Dashboard de Gestão - Microempresa",
     page_icon="💼",
@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Categorias (Lógica de Negócio) ---
+
 MAPA_CATEGORIAS = {
     'Impostos': ['das', 'imposto de renda', 'inss', 'fgts', 'simples nacional'],
     'Custos Fixos': ['aluguel', 'pro-labore', 'salario', 'contabilidade', 'internet', 'luz', 'agua'],
@@ -30,7 +30,7 @@ def categorizar_transacao(descricao):
                 return categoria
     return 'Outros Custos' 
 
-# --- Sidebar (Upload) ---
+
 st.sidebar.image("https://images.unsplash.com/photo-1554224155-1696413565d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzNDQ5Njd8MHwxfHNlYXJjaHwyfHxmaW5hbmNlfGVufDB8fHx8MTcyMDczNzMyN3ww&ixlib=rb-4.0.3&q=80&w=400", use_column_width=True)
 st.sidebar.title("Gestor ME/MEI 💼")
 st.sidebar.markdown("Faça o upload do seu extrato bancário (.csv) para análise.")
@@ -45,7 +45,7 @@ st.sidebar.markdown("""
 * **Receitas** devem ter valores **positivos** (ex: 3000.00)
 """)
 
-# --- Tela Principal (Lógica do Dashboard) ---
+
 if uploaded_file is None:
     st.title("Dashboard de Gestão - Microempresa")
     st.info("Por favor, carregue seu extrato CSV na barra lateral à esquerda para começar a análise.")
@@ -53,19 +53,19 @@ else:
     try:
         df = pd.read_csv(uploaded_file)
         
-        # Verificação das colunas
+ 
         cols_necessarias = ['Data', 'Descricao_Transacao', 'Valor']
         if not all(col in df.columns for col in cols_necessarias):
             st.error(f"Erro: O arquivo CSV deve conter as colunas: {', '.join(cols_necessarias)}.")
             st.stop() 
             
-        # --- Processamento ---
+        
         df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
         df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
         df.dropna(subset=cols_necessarias, inplace=True)
         df['Categoria'] = df['Descricao_Transacao'].apply(categorizar_transacao)
 
-        # --- KPIs (Métricas de Negócio) ---
+        
         df_receitas = df[df['Valor'] > 0]
         df_despesas = df[df['Valor'] < 0]
         
@@ -90,13 +90,13 @@ else:
                     delta_color="inverse") 
         col5.metric("Nº de Transações", f"{df.shape[0]}")
 
-        # --- Abas (Tabs) ---
+        
         tab_graficos, tab_tabela = st.tabs(["📊 Análise Visual (Gráficos)", "📑 Tabela de Transações"])
 
         with tab_graficos:
             st.header("Análises Gráficas", divider='gray')
             
-            # --- Preparação dos Dados para Gráficos ---
+            
             df_gastos_categoria = df_despesas[df_despesas['Categoria'] != 'Vendas/Faturamento'].copy()
             df_gastos_categoria['Valor_Abs'] = df_gastos_categoria['Valor'].abs()
             df_agrupado = df_gastos_categoria.groupby('Categoria')['Valor_Abs'].sum().reset_index()
@@ -119,10 +119,10 @@ else:
             with col_graf2:
                 st.subheader("Visão Geral (Barras Lado a Lado)")
                 
-                # 1. Renomeia o dataframe de custos (já ordenado)
+                
                 df_custos_barras = df_agrupado.rename(columns={'Categoria': 'Métrica', 'Valor_Abs': 'Valor'})
                 
-                # 2. Cria os dataframes para Faturamento e Lucro
+                
                 df_faturamento = pd.DataFrame({
                     'Métrica': ['Faturamento Bruto'],
                     'Valor': [faturamento_bruto]
@@ -133,10 +133,10 @@ else:
                     'Valor': [lucro_liquido] # Mostra lucro positivo ou negativo
                 })
 
-                # 3. Junta tudo em um dataframe só
+                
                 df_grafico_final = pd.concat([df_faturamento, df_custos_barras, df_lucro])
                 
-                # 4. Cria o gráfico
+               
                 fig_bar_grouped = px.bar(
                     df_grafico_final,
                     x='Métrica', # Cada Métrica (Faturamento, Aluguel, Imposto, Lucro) vira uma barra
@@ -146,12 +146,12 @@ else:
                     labels={'Valor': 'Valor (R$)', 'Métrica': 'Componente Financeiro'}
                 )
                 
-                # Ordena as barras no eixo X do maior valor para o menor
+                
                 fig_bar_grouped.update_layout(xaxis_categoryorder='total descending')
 
                 st.plotly_chart(fig_bar_grouped, use_container_width=True)
 
-            # --- Gráfico de Linha (Evolução) ---
+            
             st.subheader("Evolução do Faturamento vs. Custos ao Longo do Tempo")
             df_receitas_dia = df_receitas.groupby(pd.Grouper(key='Data', freq='D'))['Valor'].sum().reset_index().rename(columns={'Valor': 'Faturamento'})
             df_despesas_dia = df_despesas.groupby(pd.Grouper(key='Data', freq='D'))['Valor'].sum().abs().reset_index().rename(columns={'Valor': 'Custos'})
@@ -166,7 +166,7 @@ else:
             )
             st.plotly_chart(fig_line, use_container_width=True)
 
-        # --- Aba da Tabela ---
+        
         with tab_tabela:
             st.header("Todas as Transações Categorizadas", divider='gray')
             st.markdown("Verifique, filtre ou ordene suas transações.")
@@ -184,7 +184,8 @@ else:
             
             st.dataframe(df_display, use_container_width=True, hide_index=True)
 
-    # Captura de erro
+    
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
         st.error("Verifique se o seu CSV está no formato correto (separado por vírgulas) e tente novamente.")
+
