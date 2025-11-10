@@ -191,5 +191,5 @@ else:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
         st.error("Verifique se o seu CSV está no formato correto (separado por vírgulas) e tente novamente.")
 
-else:
-    st.info("Aguardando o upload do seu extrato CSV... 📄")
+
+
