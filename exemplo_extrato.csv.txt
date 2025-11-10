@@ -1,0 +1,15 @@
+Data,Descricao_Transacao,Valor
+2024-10-01,Recebimento Venda Pix,3000.00
+2024-10-05,Pagamento Aluguel Sala,-2200.00
+2024-10-07,Pagamento Cliente A (Boleto),1500.00
+2024-10-08,Pagamento DAS - Simples Nacional,-350.00
+2024-10-10,Compra mercadoria Fornecedor K,-1200.00
+2024-10-15,Venda Cliente C (Cartão),2500.00
+2024-10-15,Taxa de Maquina Cartão,-120.00
+2024-10-18,Honorarios Contabilidade,-450.00
+2024-10-20,Pagamento Conta de Luz,-300.00
+2024-10-22,Frete Entrega Cliente A,-80.00
+2024-10-25,Recebimento Cliente D,4000.00
+2024-10-28,Google Ads (Marketing),-400.00
+2024-10-30,Pagamento Pro-Labore (Socio),-2000.00
+2024-10-31,Tarifa Bancaria Manutenção,-60.00
