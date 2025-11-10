@@ -130,7 +130,7 @@ else:
                 
                 df_lucro = pd.DataFrame({
                     'Métrica': ['Lucro Líquido'],
-                    'Valor': [lucro_liquido] # Mostra lucro positivo ou negativo
+                    'Valor': [lucro_liquido] 
                 })
 
                 
@@ -188,5 +188,6 @@ else:
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
         st.error("Verifique se o seu CSV está no formato correto (separado por vírgulas) e tente novamente.")
+
 
 
